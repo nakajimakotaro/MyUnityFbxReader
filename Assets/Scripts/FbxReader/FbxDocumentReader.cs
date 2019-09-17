@@ -3,21 +3,20 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Text;
+using Unity.Profiling;
 
-public class FbxHeader
+public sealed class FbxHeader
 {
     public uint FileVersion;
 }
 
-public class FbxData
+public sealed class FbxData
 {
     public FbxHeader Header;
     public FbxNode Node;
-    public FbxConnectionCache ConnectionCache;
-    public FbxObjectCache ObjectCache;
 }
 
-public class FbxNode
+public sealed class FbxNode
 {
     public string Name;
     public object[] Properties;
@@ -40,7 +39,7 @@ public class FbxNode
     }
 }
 
-public class FbxPropertyHeader
+public sealed class FbxPropertyHeader
 {
     public ulong EndOffset;
     public ulong NumProperties;
@@ -61,30 +60,32 @@ public static class FbxDocumentReader
 
     static FbxData Read(BinaryReader reader)
     {
-        var data = new FbxData();
-        data.Header = ReadHeader(reader);
+        var header  = ReadHeader(reader);
         var nodes = new List<FbxNode>();
         while (true)
         {
-            var node = ReadNode(reader, data.Header.FileVersion);
+            var node = ReadNode(reader, header.FileVersion);
             if (node == null) break;
             nodes.Add(node);
         }
-        data.Node = new FbxNode();
-        data.Node.Childs = nodes.ToArray();
-        data.ConnectionCache = FbxConnectionCache.Build(data);
-        data.ObjectCache = FbxObjectCache.Build(data);
-        
-        return data;
+
+        return new FbxData
+        {
+            Header = header,
+            Node = new FbxNode
+            {
+                Childs = nodes.ToArray()
+            }
+        };
     }
 
     static FbxHeader ReadHeader(BinaryReader reader)
     {
-        var buffer = new byte[21];
-        reader.Read(buffer, 0, buffer.Length);
+        var skipBuffer = new byte[21];
+        reader.Read(skipBuffer, 0, skipBuffer.Length);
         
-        buffer = new byte[2];
-        reader.Read(buffer, 0, buffer.Length);
+        skipBuffer = new byte[2];
+        reader.Read(skipBuffer, 0, skipBuffer.Length);
         
         var fileVersion = reader.ReadUInt32();
 
@@ -102,13 +103,13 @@ public static class FbxDocumentReader
             header.EndOffset = reader.ReadUInt32();
             header.NumProperties = reader.ReadUInt32();
             header.PropertyListLen = reader.ReadUInt32();
-            header.NameLen =reader.ReadByte();
+            header.NameLen = reader.ReadByte();
         }else if (version == 7500)
         {
             header.EndOffset = reader.ReadUInt64();
             header.NumProperties = reader.ReadUInt64();
             header.PropertyListLen = reader.ReadUInt64();
-            header.NameLen =reader.ReadByte();
+            header.NameLen = reader.ReadByte();
         }
         return header;
     }

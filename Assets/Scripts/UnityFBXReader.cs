@@ -1,11 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 public class UnityFBXReader : MonoBehaviour
 {
     [SerializeField] MeshFilter MeshFilter;
     [SerializeField] MeshRenderer MeshRenderer;
+    static readonly int MainTex = Shader.PropertyToID("_MainTex");
+
     void Start()
     {
         var data = FbxReader.ReadFromFile("Assets/test.fbx");
@@ -13,7 +14,7 @@ public class UnityFBXReader : MonoBehaviour
         var geometry = data.Object.Geometry[0];
         geometry.ToTrainable();
 
-        var vertices = ConvertVector3(geometry.Vertices.Vertices);
+        var vertices = ConvertVector3(geometry.ObjectGeometryVertices.Vertices);
         var normals = ConvertVector3(geometry.Normal.Normal);
         var uv = ConvertVector2(geometry.UV.UV);
         
@@ -36,38 +37,25 @@ public class UnityFBXReader : MonoBehaviour
         }
         
         mesh.RecalculateTangents();
+        mesh.UploadMeshData(true);
         
         MeshFilter.mesh = mesh;
-    }
 
-//    T[] ReadLayerElement<T, E>(FbxNode meshNode, string nodeName, string propertyName, PolygonMap polygonMap,
-//        Func<E[], T[]> convertFunc)
-//    {
-//        var node = GetChildNode(meshNode, nodeName);
-//        var info = ReadLayerElementInfo(node);
-//        var polygonArray = convertFunc(GetProperty<E[]>(node, propertyName));
-//
-//        if (info.MappingInformationType == MappingInformationType.ByPolygon)
-//        {
-//            polygonArray = PolygonToPolygonIndex(polygonMap, polygonArray);
-//            return TriangleDivision(polygonMap, polygonArray);
-//        }
-//        
-//        switch (info.ReferenceInformationType)
-//        {
-//            case ReferenceInformationType.IndexToDirect:
-//            {
-//                var polygonIndex = GetProperty<int[]>(node, propertyName + "Index");
-//                var triangleIndex = TriangleDivision(polygonMap, polygonIndex);
-//                return IndexToVertex(polygonArray, triangleIndex);
-//            }
-//
-//            case ReferenceInformationType.Direct:
-//                return TriangleDivision(polygonMap, polygonArray);
-//            default:
-//                throw new Exception();
-//        }
-//    }
+        for (var i = 0; i < data.Object.Materials.Count; i++)
+        {
+            var materialData = data.Object.Materials[i];
+            var textureData = materialData.GetTexture();
+            if (textureData == null)
+            {
+                continue;
+            }
+
+            var path = textureData.RelativeFilename.Replace("Resources\\", "").Replace(".png", "");
+            var texture = Resources.Load<Texture>(path);
+            var material = MeshRenderer.materials[i];
+            material.SetTexture(MainTex, texture);
+        }
+    }
 
     static Vector2[] ConvertVector2(double[] array)
     {

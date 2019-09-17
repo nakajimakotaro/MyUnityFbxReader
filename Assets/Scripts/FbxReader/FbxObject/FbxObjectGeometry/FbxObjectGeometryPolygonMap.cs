@@ -1,11 +1,20 @@
 using System.Collections.Generic;
 
-public sealed class PolygonMap
+/// <summary>
+/// FbxObjectGeometryPolygonVertexIndexの頂点
+/// </summary>
+public sealed class FbxObjectGeometryPolygonMap
 {
+    /// <summary>
+    /// ポリゴンを形成する頂点の数のリスト
+    /// </summary>
     public int[] VertexNumArray;
+    /// <summary>
+    /// 三角形にしたときの頂点数の合計
+    /// </summary>
     public int VertexNum;
 
-    public PolygonMap(FbxNode indexNode)
+    public FbxObjectGeometryPolygonMap(FbxNode indexNode)
     {
         var map = new List<int>();
 

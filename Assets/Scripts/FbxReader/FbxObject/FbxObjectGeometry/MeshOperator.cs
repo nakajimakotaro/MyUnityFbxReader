@@ -23,7 +23,7 @@ public static class MeshOperator
         return res;
     }
 
-    public static T[] TriangleDivision<T>(T[] array, int num, PolygonMap map)
+    public static T[] TriangleDivision<T>(T[] array, int num, FbxObjectGeometryPolygonMap map)
     {
         var triangle = new T[map.VertexNum*num];
         var vertexCount = 0;
@@ -58,7 +58,7 @@ public static class MeshOperator
         return triangle;
     }
     
-    public static T[] PolygonToPolygonIndex<T>(T[] array, int num, PolygonMap map)
+    public static T[] PolygonToPolygonIndex<T>(T[] array, int num, FbxObjectGeometryPolygonMap map)
     {
         var res = new T[map.VertexNum];
 
